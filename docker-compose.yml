@@ -1,0 +1,52 @@
+app-lb:
+  ports:
+  - 80:80
+  labels:
+    io.rancher.scheduler.affinity:host_label: server=proxy
+    io.rancher.loadbalancer.target.result: result.app:80=80
+    io.rancher.loadbalancer.target.vote: vote.app:80=80
+  tty: true
+  image: rancher/load-balancer-service
+  links:
+  - result:result
+  - vote:vote
+  stdin_open: true
+result:
+  labels:
+    io.rancher.container.pull_image: always
+    io.rancher.scheduler.affinity:host_label: server=application
+  tty: true
+  image: davecss/result
+  links:
+  - postgres:db
+redis:
+  labels:
+    io.rancher.container.pull_image: always
+    io.rancher.scheduler.affinity:host_label: server=stateful
+  tty: true
+  image: redis:alpine
+  stdin_open: true
+vote:
+  labels:
+    io.rancher.container.pull_image: always
+    io.rancher.scheduler.affinity:host_label: server=application
+  tty: true
+  image: davecss/vote
+  links:
+  - 'redis:'
+worker:
+  labels:
+    io.rancher.container.pull_image: always
+    io.rancher.scheduler.affinity:host_label: server=application
+  tty: true
+  image: davecss/worker
+  links:
+  - postgres:db
+  - 'redis:'
+postgres:
+  labels:
+    io.rancher.container.pull_image: always
+    io.rancher.scheduler.affinity:host_label: server=stateful
+  tty: true
+  image: postgres:9.4
+  stdin_open: true
